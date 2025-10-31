@@ -1,0 +1,91 @@
+{
+  "eval_set_id": "test_suite",
+  "name": "test_suite",
+  "description": null,
+  "eval_cases": [
+    {
+      "eval_id": "test_case_1",
+      "conversation": [
+        {
+          "invocation_id": "e-13cfe865-f291-4b2a-bd88-65b92e540448",
+          "user_content": {
+            "parts": [
+              {
+                "video_metadata": null,
+                "thought": null,
+                "inline_data": null,
+                "file_data": null,
+                "thought_signature": null,
+                "function_call": null,
+                "code_execution_result": null,
+                "executable_code": null,
+                "function_response": null,
+                "text": "hello"
+              }
+            ],
+            "role": "user"
+          },
+          "final_response": {
+            "parts": [
+              {
+                "video_metadata": null,
+                "thought": null,
+                "inline_data": null,
+                "file_data": null,
+                "thought_signature": null,
+                "function_call": null,
+                "code_execution_result": null,
+                "executable_code": null,
+                "function_response": null,
+                "text": "{\"voice_str\": \"Hello! I'm Avery from JP Morgan's Client Assist platform. I can help you navigate our investment research documents. How may I assist you today?\", \"text\": \"Hi there! I'm Avery, your guide to JP Morgan's investment research and advisory documents. Feel free to ask me about any document-related questions.\", \"send_to_ui\": false, \"follow_up_questions\": []}"
+              }
+            ],
+            "role": null
+          },
+          "intermediate_data": {
+            "tool_uses": [
+              {
+                "id": "adk-f61284d4-31ef-4577-8d2d-77cdf997d3a7",
+                "args": {
+                  "voice_str": "Hello! I'm Avery from JP Morgan's Client Assist platform. I can help you navigate our investment research documents. How may I assist you today?",
+                  "follow_up_questions": [],
+                  "send_to_ui": false,
+                  "text": "Hi there! I'm Avery, your guide to JP Morgan's investment research and advisory documents. Feel free to ask me about any document-related questions."
+                },
+                "name": "set_model_response"
+              }
+            ],
+            "tool_responses": [],
+            "intermediate_responses": [
+              [
+                "intent_agent",
+                [
+                  {
+                    "video_metadata": null,
+                    "thought": null,
+                    "inline_data": null,
+                    "file_data": null,
+                    "thought_signature": null,
+                    "function_call": null,
+                    "code_execution_result": null,
+                    "executable_code": null,
+                    "function_response": null,
+                    "text": "{\"query\": \"hello\", \"intent\": \"greet\", \"reasoning\": \"The message is a simple standalone greeting with no other content, which directly matches the definition of the 'greet' intent.\", \"confidence_float\": 0.98, \"allowed\": true}"
+                  }
+                ]
+              ]
+            ]
+          },
+          "creation_timestamp": 1761768443.877806
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      },
+      "creation_timestamp": 1761768650.9337893
+    }
+  ],
+  "creation_timestamp": 1761768621.765097
+}

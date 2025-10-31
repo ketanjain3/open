@@ -1,0 +1,13 @@
+# Core RAG dependencies
+cognee>=0.1.0
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# PDF processing
+pypdf>=3.0.0
+pymupdf>=1.23.0
+
+# LLM providers
+openai>=1.0.0  # For OpenAI embeddings (default)
+# anthropic>=0.25.0  # For Claude
