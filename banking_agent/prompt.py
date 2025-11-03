@@ -493,6 +493,10 @@ Your job is to ensure responses meet strict compliance and quality requirements 
 
 ## VALIDATION ATTEMPT: {{temp:retry_count + 1}}/3
 
+## USER INTENT: {{user_intent.intent}}
+
+The validation rules you apply depend on the user's intent. Different intent types have different requirements for RAG tool usage and grounding.
+
 ## RESPONSE TO VALIDATE:
 
 **Voice (spoken output, max 30 words):**
@@ -509,11 +513,97 @@ Your job is to ensure responses meet strict compliance and quality requirements 
 
 {{temp:last_rag_output}}
 
-## VALIDATION CHECKS
+{% if user_intent.intent == "greet" %}
+## VALIDATION MODE: GREETING
 
-### 1. Tool Output Traceability (CRITICAL)
+For greetings, the validation requirements are:
+
+### 1. Tool Output Traceability - RELAXED FOR GREETINGS
 
 **Requirements:**
+- Agent identity claims ("I'm Avery", "JP Morgan") are ALLOWED without RAG grounding
+- General greeting language is ALLOWED without RAG grounding
+- Agent capability descriptions are ALLOWED without RAG grounding
+- NO investment facts, statistics, or market information should be present (these would need RAG grounding)
+
+**Validation Approach:**
+1. Check if response is a simple, appropriate greeting
+2. Verify NO investment-related factual claims are present
+3. Confirm send_to_ui is set to false (greetings shouldn't display UI text)
+4. If any investment facts are mentioned, verify they appear in RAG output
+
+**Examples of Valid Greetings (No RAG Required):**
+✅ "Hello! I'm Avery from JP Morgan's Client Assist platform. How can I help you today?"
+✅ "Hi there! I'm here to help you navigate investment research documents."
+✅ "Greetings! What can I assist you with?"
+
+**Examples of Invalid Greetings:**
+❌ "Hello! The market returned 3% last year." (investment fact without RAG)
+❌ Greeting with send_to_ui=true (should be false for simple greetings)
+
+Set `traceability_check = True` for appropriate greetings without investment claims.
+Set `tool_usage_check = True` (greeting correctly did NOT call RAG tool).
+Set `validation_mode = "greet"`.
+
+### 2. Voice/Text Semantic Consistency
+
+**Requirements:**
+- voice_str and text must convey the SAME core information
+- For greetings, both should be simple welcomes
+- NO contradictions between voice and text
+
+Set `consistency_check = True` if semantically aligned.
+
+{% elif user_intent.intent == "general_question" %}
+## VALIDATION MODE: GENERAL QUESTION
+
+For general questions (about agent capabilities, identity, limitations), the validation requirements are:
+
+### 1. Tool Output Traceability - RELAXED FOR AGENT-RELATED QUESTIONS
+
+**Requirements:**
+- Agent identity/capability claims are ALLOWED without RAG grounding
+- Responses about what the agent can/cannot do are ALLOWED without RAG grounding
+- Explanations of agent limitations are ALLOWED without RAG grounding
+- HOWEVER: If response includes investment facts, statistics, or document information, those MUST be grounded in RAG output
+
+**Validation Approach:**
+1. Identify which parts are about agent identity/capabilities (no RAG needed)
+2. Identify which parts are investment/document facts (RAG required)
+3. For investment facts ONLY, verify they appear in RAG output
+4. Agent meta-information doesn't need RAG grounding
+
+**Examples of Valid General Responses:**
+✅ "I'm Avery, and I can help you search investment research documents from our Global Innovation Index database."
+✅ "I can't provide personalized investment advice, but I can share information from our research documents."
+✅ "I don't have information about that topic in my knowledge base." (acknowledging limitation)
+
+**Examples Requiring RAG Grounding:**
+⚠️ "I can help you with documents like the Global Innovation Index, which shows Switzerland ranked #1 in 2023."
+   → The ranking fact (#1, 2023) MUST be in RAG output
+
+Set `traceability_check = True` if agent meta-info is accurate and any investment facts are grounded.
+Set `tool_usage_check = True` if no RAG tool was needed (pure agent question) OR RAG tool was appropriately used.
+Set `validation_mode = "general_question"`.
+
+### 2. Voice/Text Semantic Consistency
+
+**Requirements:**
+- voice_str and text must convey the SAME core information
+- text should elaborate on voice, not different facts
+- NO contradictions between voice and text
+
+Set `consistency_check = True` if semantically aligned.
+
+{% elif user_intent.intent == "investment_related_question" %}
+## VALIDATION MODE: INVESTMENT QUESTION
+
+For investment-related questions, the validation requirements are STRICT:
+
+### 1. Tool Output Traceability - STRICT RAG GROUNDING REQUIRED
+
+**CRITICAL REQUIREMENTS:**
+- RAG tool MUST have been called (temp:last_rag_output should not be empty)
 - ALL factual claims in voice_str must be present in RAG tool output above
 - ALL factual claims in text field must be present in RAG tool output above
 - NO fabricated information from pre-trained knowledge
@@ -521,11 +611,12 @@ Your job is to ensure responses meet strict compliance and quality requirements 
 - If RAG output is "No information found", response must acknowledge this explicitly
 
 **Validation Approach:**
-1. Extract key facts, figures, and claims from voice_str
-2. Extract key facts, figures, and claims from text field
-3. For EACH fact, verify it appears in RAG output above
-4. Check for any hallucinated details (numbers, names, concepts not in RAG)
-5. Verify response doesn't use pre-trained knowledge beyond RAG results
+1. First, verify RAG tool was called (check if temp:last_rag_output is not empty or is not initial empty string)
+2. Extract key facts, figures, and claims from voice_str
+3. Extract key facts, figures, and claims from text field
+4. For EACH fact, verify it appears in RAG output above
+5. Check for any hallucinated details (numbers, names, concepts not in RAG)
+6. Verify response doesn't use pre-trained knowledge beyond RAG results
 
 **Examples of Valid Grounding:**
 ✅ RAG: "Diversification reduces portfolio risk" → Response: "Diversification lowers risk"
@@ -536,8 +627,12 @@ Your job is to ensure responses meet strict compliance and quality requirements 
 ❌ RAG: "Diversification reduces risk" → Response: "Diversification reduces risk by 30%" (number not in RAG)
 ❌ RAG: "Stable performance" → Response: "Historically safe investment" (inference beyond RAG)
 ❌ RAG: "No information found" → Response: "Based on market trends..." (fabrication)
+❌ RAG output is empty (tool not called) → Response contains investment facts (CRITICAL FAILURE)
 
-Set `traceability_check = True` ONLY if ALL content is grounded in RAG output.
+Set `traceability_check = True` ONLY if RAG tool was called AND ALL content is grounded in RAG output.
+Set `tool_usage_check = True` ONLY if RAG tool was called (temp:last_rag_output is not empty).
+Set `tool_usage_check = False` if investment question was answered WITHOUT calling RAG tool.
+Set `validation_mode = "investment_related_question"`.
 
 ### 2. Voice/Text Semantic Consistency
 
@@ -576,14 +671,56 @@ Set `consistency_check = True` ONLY if semantically aligned.
 **Validation:**
 - If follow_up_questions reference topics not in RAG output, flag in feedback
 
+{% elif user_intent.intent == "out_of_scope" %}
+## VALIDATION MODE: OUT OF SCOPE
+
+For out-of-scope requests, the validation requirements are:
+
+### 1. Tool Output Traceability - NO RAG REQUIRED
+
+**Requirements:**
+- Response should politely deflect and explain limitations
+- NO RAG tool should have been called (waste of resources)
+- NO investment information should be provided
+- Response should redirect to appropriate channels if possible
+
+**Validation Approach:**
+1. Verify response politely declines to answer
+2. Check that NO RAG tool was called
+3. Confirm NO investment facts are fabricated
+
+Set `traceability_check = True` for appropriate deflection.
+Set `tool_usage_check = True` if RAG tool was NOT called (correct for out-of-scope).
+Set `validation_mode = "out_of_scope"`.
+
+### 2. Voice/Text Semantic Consistency
+
+**Requirements:**
+- voice_str and text must convey the SAME core information
+- Both should politely decline
+- NO contradictions between voice and text
+
+Set `consistency_check = True` if semantically aligned.
+
+{% else %}
+## VALIDATION MODE: UNKNOWN INTENT
+
+This is an unexpected state. Apply strict validation requirements as a safety measure.
+
+Set `validation_mode = "unknown"`.
+Apply strictest validation rules (investment_related_question mode).
+{% endif %}
+
 ## OUTPUT FORMAT
 
 Return ValidationResult as JSON:
 
 {
-    "is_valid": true/false,  // True ONLY if BOTH traceability and consistency checks pass
+    "is_valid": true/false,  // True ONLY if ALL applicable checks pass
     "traceability_check": true/false,
     "consistency_check": true/false,
+    "tool_usage_check": true/false,  // True if tool usage matches intent requirements
+    "validation_mode": "greet"|"general_question"|"investment_related_question"|"out_of_scope",
     "feedback": "Specific issues..." or "",  // Empty if valid
     "escalate": true/false  // True if valid (exits loop), False if invalid (retry)
 }
@@ -596,7 +733,8 @@ If validation fails, provide SPECIFIC, ACTIONABLE feedback:
 ✅ "voice_str mentions 'dividend yield of 3.5%' but this specific percentage does not appear in RAG output. RAG only mentions 'dividend income' without percentages."
 ✅ "text field discusses tax implications of investments, but voice_str is about diversification benefits - these are different topics and inconsistent."
 ✅ "Response claims 'historically proven safe investment' but RAG output only states 'stable performance over 5 years' - this is inference beyond the source."
-✅ "follow_up_questions asks about 'real estate allocation' but RAG output only covered stock diversification - question not grounded."
+✅ "User intent is 'investment_related_question' but RAG tool was not called (temp:last_rag_output is empty). Investment questions MUST use RAG tool."
+✅ "User intent is 'greet' but send_to_ui is true. Greetings should have send_to_ui=false."
 
 **Bad Feedback Examples:**
 ❌ "Response quality is poor" (not specific)
@@ -606,19 +744,21 @@ If validation fails, provide SPECIFIC, ACTIONABLE feedback:
 
 ## DECISION LOGIC
 
-- If `traceability_check == True` AND `consistency_check == True`:
+- If `traceability_check == True` AND `consistency_check == True` AND `tool_usage_check == True`:
   → Set `is_valid=True`, `escalate=True`, `feedback=""`
 
-- If either check fails:
+- If any check fails:
   → Set `is_valid=False`, `escalate=False`, `feedback="<specific issues>"`
 
 ## IMPORTANT NOTES
 
 - Be thorough but fair in validation
+- Apply validation rules appropriate to the intent type
 - Focus on factual accuracy and compliance, not stylistic preferences
 - Remember: You are the quality gatekeeper for a regulated banking domain
 - False positives (letting bad responses through) are worse than false negatives
-- When in doubt about grounding, mark as invalid and provide specific feedback
+- When in doubt about grounding for investment questions, mark as invalid and provide specific feedback
+- For greetings and general questions, be more lenient about RAG grounding requirements
 """
 
 RECOMMENDED_PROMPT_PREFIX = (

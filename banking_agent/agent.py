@@ -57,8 +57,6 @@ from .prompt import (
 # RAG (Retrieval-Augmented Generation) functionality using Cognee
 # BUSINESS REASON: Compliance/accuracy requirement - prevents hallucination, ensures responses
 # are grounded in actual document content (Global Innovation Index database)
-from .rag.retrieval import search_knowledge
-import cognee
 
 # Environment configuration
 load_dotenv()
@@ -132,6 +130,9 @@ async def search_documents(
     # BUSINESS DECISION: OpenAI used for embeddings/RAG processing (separate from Gemini agent LLM)
     # REASON: OpenAI embeddings proven reliable for financial document retrieval
     # MODEL: gpt-4o-mini chosen for cost-effective embedding generation
+    import cognee
+    from .rag.retrieval import search_knowledge
+
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key:
         os.environ["LLM_API_KEY"] = api_key
@@ -230,7 +231,7 @@ async def search_documents(
 # - query: Original user message (audit trail)
 # - intent: IntentCategory enum (routing logic)
 # - reasoning: Detailed explanation (transparency, debugging, QA)
-# - confidence_float: 0.0-1.0 (flag low-confidence classifications for review)
+# - confidence: 0.0-1.0 (flag low-confidence classifications for review)
 # - allowed: Boolean (security gate - false ONLY for out_of_scope)
 #
 # SESSION STATE COMMUNICATION:
@@ -577,6 +578,7 @@ avery_with_validation = LoopAgent(
     name="avery_with_validation",
     sub_agents=[avery_agent, validator_agent],
     max_iterations=3,  # Maximum retry attempts before fallback
+    # Note: avery_agent already saves its output to "avery_response" via its output_key
 )
 
 # Attach fallback handler for max retries scenario

@@ -48,7 +48,7 @@ The system uses a `SequentialAgent` pattern with two specialized agents:
 ### Key Data Models (models.py)
 
 - `AgentResponse`: Structured output with `voice_str` (max 30 words for audio), `text` (markdown formatted), `send_to_ui` flag, and `follow_up_questions` list
-- `IntentGuardrailOutput`: Intent classification with `query`, `intent`, `reasoning`, `confidence_float`, and `allowed` flag
+- `IntentGuardrailOutput`: Intent classification with `query`, `intent`, `reasoning`, `confidence`, and `allowed` flag
 - `IntentCategory`: Enum with GREET, INVESTMENT_RELATED, GENERAL_QUESTION, OUT_OF_SCOPE
 
 ### Prompts (prompt.py)

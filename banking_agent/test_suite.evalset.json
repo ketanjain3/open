@@ -1,10 +1,10 @@
 {
   "eval_set_id": "test_suite",
   "name": "test_suite",
-  "description": null,
+  "description": "Intent-aware validation test suite covering greet, general_question, investment_related_question, and out_of_scope intents",
   "eval_cases": [
     {
-      "eval_id": "test_case_1",
+      "eval_id": "test_greeting",
       "conversation": [
         {
           "invocation_id": "e-13cfe865-f291-4b2a-bd88-65b92e540448",
@@ -70,7 +70,7 @@
                     "code_execution_result": null,
                     "executable_code": null,
                     "function_response": null,
-                    "text": "{\"query\": \"hello\", \"intent\": \"greet\", \"reasoning\": \"The message is a simple standalone greeting with no other content, which directly matches the definition of the 'greet' intent.\", \"confidence_float\": 0.98, \"allowed\": true}"
+                    "text": "{\"query\": \"hello\", \"intent\": \"greet\", \"reasoning\": \"The message is a simple standalone greeting with no other content, which directly matches the definition of the 'greet' intent.\", \"confidence\": 0.98, \"allowed\": true}"
                   }
                 ]
               ]
@@ -85,6 +85,136 @@
         "state": {}
       },
       "creation_timestamp": 1761768650.9337893
+    },
+    {
+      "eval_id": "test_general_question_agent_capabilities",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "What can you help me with?"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "test_general_question_identity",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Who are you?"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "test_investment_question_with_rag",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Tell me about innovation rankings globally"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "test_investment_question_specific_country",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "What is Switzerland's innovation ranking?"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "test_out_of_scope_personal",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "What's the weather like today?"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "test_multi_turn_greeting_then_investment",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Hi there!"
+              }
+            ],
+            "role": "user"
+          }
+        },
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Can you tell me about the Global Innovation Index?"
+              }
+            ],
+            "role": "user"
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "banking_agent",
+        "user_id": "user",
+        "state": {}
+      }
     }
   ],
   "creation_timestamp": 1761768621.765097
