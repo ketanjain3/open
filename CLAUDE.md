@@ -132,9 +132,9 @@ This will:
 
 ## Architecture
 
-### Banking Agent - Multi-Agent Sequential System
+### Banking Agent - Multi-Agent Sequential System with Validation Loop
 
-The banking agent (`banking_agent/agent.py`) uses a **SequentialAgent** pattern with two sub-agents:
+The banking agent (`banking_agent/agent.py`) uses a **SequentialAgent** pattern with nested **LoopAgent** for quality validation:
 
 1. **Intent Agent** (`intent_agent`)
    - Purpose: Classifies user messages into intent categories
@@ -142,16 +142,27 @@ The banking agent (`banking_agent/agent.py`) uses a **SequentialAgent** pattern 
    - Categories: `greet`, `investment_related_question`, `general_question`, `out_of_scope`
    - Temperature: 0.1 for consistent classification
 
-2. **Avery Agent** (`avery_agent`)
-   - Purpose: Main conversational agent that handles user queries
-   - Reads intent from session state (`user_intent` key)
-   - Has access to RAG tool: `search_documents(query, limit)`
-   - Output: Structured `AgentResponse` with voice/text split for multi-modal delivery
-   - Temperature: 0.1
+2. **Concierge with Validation** (`concierge_with_validation` - LoopAgent, max 3 iterations)
+   - **Concierge Agent** (formerly `avery_agent`)
+     - Purpose: Main conversational agent that handles user queries
+     - Reads intent from session state (`user_intent` key)
+     - Has access to RAG tool: `search_documents(query, limit, tool_context)`
+     - Output: Structured `AgentResponse` saved as `avery_response`
+     - Temperature: 0.1
+     - Reads `temp:validation_feedback` on retry attempts for self-correction
+
+   - **Validator Agent** (quality gate)
+     - Purpose: Ensures RAG-grounded responses and voice/text consistency
+     - Validates: Tool output traceability + semantic consistency
+     - Output: `ValidationResult` with specific feedback
+     - Temperature: 0.2
+     - Returns `escalate=True` to exit loop, `False` to retry
+
+   - **Fallback Handler**: Returns professional escalation message after max retries
 
 3. **Root Agent** (`root_agent`)
    - Type: `SequentialAgent` that orchestrates the workflow
-   - Runs sub-agents in order: intent_agent → avery_agent
+   - Runs sub-agents: intent_agent → concierge_with_validation (LoopAgent)
    - Entry point for the system
 
 ### Key Design Patterns

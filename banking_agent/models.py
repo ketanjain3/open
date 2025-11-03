@@ -10,6 +10,35 @@ class AgentResponse(BaseModel):
     follow_up_questions: List[str] = Field(default_factory=list, description="A list of 2-4 follow-up questions related to the user query that might help continue the conversation. These questions should be directly related to the topic and encourage deeper exploration.")
 
 
+class ValidationResult(BaseModel):
+    """Output schema for response validation agent."""
+
+    is_valid: bool = Field(
+        ...,
+        description="True if response passes all validation checks, False otherwise. This is the final verdict on whether the response meets quality standards."
+    )
+
+    traceability_check: bool = Field(
+        ...,
+        description="True if all response content (voice_str and text) is grounded in RAG tool output. False if any fabrication, hallucination, or use of pre-trained knowledge beyond the RAG results is detected."
+    )
+
+    consistency_check: bool = Field(
+        ...,
+        description="True if voice_str and text fields are semantically consistent, meaning they convey the same core information with text elaborating on voice. False if contradictions, different topics, or inconsistent facts are present."
+    )
+
+    feedback: str = Field(
+        default="",
+        description="Specific, actionable feedback on what needs improvement. Empty string if valid. Must be detailed and point to exact issues, such as: 'voice_str mentions dividend yield of 3.5% but this number does not appear in RAG output' or 'text discusses tax implications while voice discusses diversification - inconsistent topics'."
+    )
+
+    escalate: bool = Field(
+        ...,
+        description="True if validation passed and loop should exit. False to continue retry loop. This flag controls the LoopAgent behavior."
+    )
+
+
 class IntentCategory(str, Enum):
     """Intent categories for user messages."""
     GREET = "greet"
